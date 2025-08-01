@@ -1,12 +1,14 @@
 const express = require("express");
 const fs = require("fs");
 const users = require("./MOCK_DATA.json");
+
 const app = express();
 const PORT = 8000;
 
 // middleware to parse JSON data
 app.use(express.urlencoded({ extended: true }));
 
+// sample Middleware can be used to log the request or modify the request object
 app.use((req, res, next) => {
   console.log("hello from middleware 1");
   //res.json({ msg: "hello from middleware 1" });
@@ -61,7 +63,7 @@ app
   });
 
 app
-  .route("/api/users/:id")
+  .route("/api/users/:id") // dynamic path parameter
   .get((req, res) => {
     //console.log(req);
     const id = Number(req.params.id);
@@ -71,8 +73,52 @@ app
     });
     return res.json(user);
   })
-  .put((req, res) => {})
-  .delete((req, res) => {});
+  .put((req, res) => {
+    const id = Number(req.params.id);
+    console.log(id);
+    const user = users.find((user) => {
+      return user.id === id;
+    });
+    if (!user) {
+      return res.status(404).json({ status: "User not found" });
+    }
+    const updatedUser = { ...req.body, id: user.id };
+    const updatedUsers = users.map((user) => {
+      return user.id === id ? updatedUser : user; // update the user with the new data using the Map method, Map method returns a new array when itertates over the array
+    });
+
+    fs.writeFile(
+      "./MOCK_DATA.json",
+      JSON.stringify(updatedUsers),
+      (err, data) => {
+        return res.json({
+          status: "User updated successfully",
+          user: updatedUser,
+        });
+      }
+    );
+  })
+  .delete((req, res) => {
+    const id = Number(req.params.id);
+    console.log(id);
+    const user = users.find((user) => {
+      return user.id === id;
+    });
+    if (!user) {
+      return res.status(404).json({ status: "User not found" });
+    }
+    const updatedUsers = users.filter((user) => {
+      return user.id != id;
+    });
+
+    fs.writeFile(
+      "./MOCK_DATA.json",
+      JSON.stringify(updatedUsers),
+      (err, data) => {
+        return res.json({ status: "User deleted successfully" });
+      }
+    );
+  });
 
 // app.get("/api/users/:id", (req, res) => {
 //   //console.log(req);
